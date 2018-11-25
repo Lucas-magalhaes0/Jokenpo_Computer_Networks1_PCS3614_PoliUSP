@@ -5,24 +5,21 @@ from thread import *
 
 s = socket.socket()
 s.bind(("localhost",9996))
-s.listen(2) # Acepta hasta 2 conexiones entrantes.
+s.listen(10) 
 
 
 def main():
-    f = open ("jokenpo", "a")
     print "Waiting connections"
     try:
         while True:
             (conn, address) = s.accept()
 
             player1 = str(address)
-            f.write("Player 1" + player1 + "\n")
             print "Connected with player1: " + str(address)
 
             (conn2, address2) = s.accept()
             
             player2 = str(address2)
-            f.write("Player 2" + player2 + "\n")
             print "Connected with player2: " + str(address2)
 
             start_new_thread(game_thread, (conn, address, conn2, address2))
@@ -41,7 +38,6 @@ def game_thread(conn, address, conn2, address2):
         player1 = conn.recv(1)
         player2 = conn2.recv(1)
         
-
         print "Player1's choice " + player1
         print "Player2's choice " + player2
 
