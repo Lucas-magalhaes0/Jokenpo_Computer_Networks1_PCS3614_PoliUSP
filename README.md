@@ -1,4 +1,5 @@
 # Jokenpo_Computer_Networks1_PCS3614_PoliUSP
+
 This is a paper for the subject of Computer Networks I - PCS3614 of the Polytechnic School of the University of São Paulo (USP).  
 
 It involves the use of sockets in python to integrate clients through a local server, using threads.  
