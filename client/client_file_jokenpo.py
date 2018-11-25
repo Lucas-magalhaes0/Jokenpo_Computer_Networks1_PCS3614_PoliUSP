@@ -4,10 +4,10 @@ import os
 
 
 def main():
+    s = socket.socket()
     try:
         while True:
             # New Game Solicitation 
-            s = socket.socket()
             s.connect(("localhost",9996))
 
             # Wait for Game Start
@@ -17,7 +17,7 @@ def main():
         
             #Turn
             wait = True
-            print "You turn!\nEnter \'r\' for Rock, \'p\' for Paper or \'s\' for Scissor:"
+            print "Your turn!\nEnter \'r\' for Rock, \'p\' for Paper or \'s\' for Scissor:"
             while (wait == True):
                 dataToSend = raw_input()
                 if(dataToSend == "p" or dataToSend == "s" or dataToSend == "r"):
@@ -42,8 +42,7 @@ def main():
             print "Game finished"
             return
     except Exception as e:
-        conn.close()
-        conn2.close()
+        s.close()
         return
         
     
