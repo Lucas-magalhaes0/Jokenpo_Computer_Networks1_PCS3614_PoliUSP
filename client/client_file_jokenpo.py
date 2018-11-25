@@ -4,10 +4,10 @@ import os
 
 
 def main():
-    s = socket.socket()
     try:
         while True:
             # New Game Solicitation 
+            s = socket.socket()
             s.connect(("localhost",9996))
 
             # Wait for Game Start
@@ -39,12 +39,12 @@ def main():
             print "Do you wanna play again? Type \'y\' for \'Yes\' or type anything for \'No\'"
             if (raw_input() == "y"): 
                 continue
-            print "Game finished"
-            return
-    except Exception as e:
-        s.close()
+            else:
+                print "Game finished"
+                return
+    except Exception:
         return
-        
+    
     
 
 def print_image (case):
