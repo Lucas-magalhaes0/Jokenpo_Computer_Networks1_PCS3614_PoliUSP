@@ -1,124 +1,151 @@
+#!/usr/bin/env python3
+
 import socket
 import sys
 import os
-from thread import *
+import threading
+import time
+import argparse
+from player import Player
 
-s = socket.socket()
-s.bind(("localhost",9996))
-s.listen(10) 
+
+def send_draw(player1, player2):
+    player1.conn.send("Draw :|".encode())
+    player2.conn.send("Draw :|".encode())
+
+
+def send_player1_wins(player1, player2):
+    player1.conn.send("You Win! :)".encode())
+    player2.conn.send("You Lose :(".encode())
+
+
+def send_player2_wins(player1, player2):
+    player1.conn.send("You Lose :(".encode())
+    player2.conn.send("You Win! :)".encode())
+
+
+def send_operation_invalid(player1, player2):
+    player1.conn.send("Invalid operation".encode())
+    player2.conn.send("Invalid operation".encode())
+
+
+def get_winner(player1_choice, player2_choice):
+
+    # Draw
+    if player1_choice == player2_choice:
+        return 0
+
+    if player1_choice == "r":
+        if player2_choice == "s":
+            return 1
+        if player2_choice == "p":
+            return 2
+
+    if player1_choice == "p":
+        if player2_choice == "r":
+            return 1
+        if player2_choice == "s":
+            return 2
+
+    if player1_choice == "s":
+        if player2_choice == "p":
+            return 1
+        if player2_choice == "r":
+            return 2
+
+    # Invalid operation
+    return 3
+
+
+class GameThread (threading.Thread):
+    def __init__(self, player1, player2):
+        threading.Thread.__init__(self)
+
+        self.player1 = player1
+        self.player2 = player2
+
+    def run(self):
+        try:
+            welcome_message = "\n" + \
+                "---------------------\n" + \
+                "Welcome to JoKenPo!\n" + \
+                "   Game Started\n" + \
+                "---------------------\n"
+
+            # Send welcome message
+            self.player1.conn.send(welcome_message.encode())
+            self.player2.conn.send(welcome_message.encode())
+
+            # Timeout for receiving names
+            self.player1.conn.settimeout(0.3)
+            self.player2.conn.settimeout(0.3)
+
+            # Wait for players names
+            self.player1.name = self.player1.conn.recv(200).decode()
+            self.player2.name = self.player2.conn.recv(200).decode()
+
+            # Return to blocking mode.
+            self.player1.conn.settimeout(None)
+            self.player2.conn.settimeout(None)
+
+            # Wait for players turns
+            self.player1.choice = self.player1.conn.recv(1).decode()
+            self.player2.choice = self.player2.conn.recv(1).decode()
+
+            print(self.player1.name + "'s choice: " + self.player1.choice)
+            print(self.player2.name + "'s choice: " + self.player2.choice)
+
+            # Send opponent's choice
+            self.player1.conn.send(self.player2.choice.encode())
+            self.player2.conn.send(self.player1.choice.encode())
+
+            # Result calculation and messages
+
+            send_result = [
+                send_draw,
+                send_player1_wins,
+                send_player2_wins,
+                send_operation_invalid,
+            ]
+
+            send_result[get_winner(self.player1.choice, self.player2.choice)](
+                self.player1, self.player2)
+
+        finally:
+            self.player1.conn.close()
+            self.player2.conn.close()
 
 
 def main():
-    print "Waiting connections"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-a", help="server IP address", default="localhost")
+    parser.add_argument("-p", type=int, help="server port", default=10000)
+    args = parser.parse_args()
+
+    print("Waiting connections")
     try:
+        s = socket.socket()
+        s.bind((args.a, args.p))
+        s.listen(10)
+        next_id = 1
         while True:
-            (conn, address) = s.accept()
+            conn, address = s.accept()
+            player1 = Player(next_id, "Player 1", conn, address)
+            print("Connected with player 1: " + str(address))
+            next_id = next_id + 1
 
-            player1 = str(address)
-            print "Connected with player1: " + str(address)
+            conn, address = s.accept()
+            player2 = Player(next_id, "Player 2", conn, address)
+            print("Connected with player 2: " + str(address))
+            next_id = next_id + 1
 
-            (conn2, address2) = s.accept()
-            
-            player2 = str(address2)
-            print "Connected with player2: " + str(address2)
+            gt = GameThread(player1, player2)
+            gt.start()
 
-            start_new_thread(game_thread, (conn, address, conn2, address2))
     except Exception as e:
-        print e.message
-        return 
-    
-        
-def game_thread(conn, address, conn2, address2):
-    try:
-        # Welcome message
-        conn.send("\n---------------------\nWelcome to JoKenPo! \n   Game Started\n---------------------\n")
-        conn2.send("\n---------------------\nWelcome to JoKenPo! \n   Game Started\n---------------------\n")
-
-        # Wait for players turn
-        player1 = conn.recv(1)
-        player2 = conn2.recv(1)
-        
-        print "Player1's choice " + player1
-        print "Player2's choice " + player2
-
-        # result calculation
-        case = ""
-        case2 = ""
-        player1_wins = False
-        player2_wins = False
-        if (player1 == "p" ):
-            if (player2 =="r"):
-                player1_wins = True
-                player2_wins = False
-                case = "p_vs_r"
-                case2 = "r_vs_p"
-            if (player2 =="s"):
-                player1_wins = False
-                player2_wins = True
-                case = "p_vs_s"
-                case2 = "s_vs_p"
-            if (player2 =="p"):
-                player1_wins = False
-                player2_wins = False
-                case = "p_vs_p"
-                case2 = "p_vs_p"
-        elif (player1 == "r" ):
-            if (player2 =="r"):
-                player1_wins = False
-                player2_wins = False
-                case = "r_vs_r"
-                case2 = "r_vs_r"
-            if (player2 =="s"):
-                player1_wins = True
-                player2_wins = False
-                case = "r_vs_s"
-                case2 = "s_vs_r"
-            if (player2 =="p"):
-                player1_wins = False
-                player2_wins = True
-                case = "r_vs_p"
-                case2 = "p_vs_r"
-        else:
-            if (player2 =="r"):
-                player1_wins = False
-                player2_wins = True
-                case = "s_vs_r"
-                case2 = "r_vs_s"
-            if (player2 =="s"):
-                player1_wins = False
-                player2_wins = False
-                case = "s_vs_s"
-                case2 = "s_vs_s"
-            if (player2 =="p"):
-                player1_wins = True
-                player2_wins = False
-                case = "s_vs_p"
-                case2 = "p_vs_s"
-
-        
-        #result messages
-        if (player1_wins and not(player2_wins)):
-            conn.send(case)
-            conn2.send(case2)
-            conn.send("You Win! :)")
-            conn2.send("You Lose :(")
-        elif (not(player1_wins) and player2_wins):
-            conn.send(case)
-            conn2.send(case2)
-            conn.send("\nYou Lose :(")
-            conn2.send("\nYou Win! :)")
-        else:
-            conn.send(case)
-            conn2.send(case2)
-            conn.send("Draw :|")
-            conn2.send("Draw :|")
-        
-    except Exception as e:
-        conn.close()
-        conn2.close()
+        print(e)
         return
 
 
 if __name__ == '__main__':
     main()
-
