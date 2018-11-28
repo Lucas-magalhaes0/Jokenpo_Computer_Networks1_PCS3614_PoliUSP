@@ -57,8 +57,8 @@ def main():
             # Play again
             s.close()
             print(
-                "Do you want to play again? Type \'y\' for \'Yes\' or type anything for \'No\'")
-            if input() == "y":
+                "Do you want to play again? Type \'Enter\' for \'Yes\' or type anything for \'No\'")
+            if input() == "":
                 continue
             else:
                 print("Game finished")
