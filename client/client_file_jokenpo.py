@@ -57,7 +57,7 @@ def main():
             # Play again
             s.close()
             print(
-                "Do you want to play again? Type \'Enter\' for \'Yes\' or type anything for \'No\'")
+                "Do you want to play again? Press \'Enter\' for \'Yes\' or type anything for \'No\'")
             if input() == "":
                 continue
             else:
